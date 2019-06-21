@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+Universidade Federal de Pernambuco (UFPE) (http://www.ufpe.br)
+Centro de Informática (CIn) (http://www.cin.ufpe.br)
+Bacharelado em Sistemas de Informacao
+IF 969 - Algoritmos e Estruturas de Dados
+Autores: Carolina Melo (cmpm) e Gabriel Mendes (mgmm)
+Emails: cmpm@cin.ufpe.br e mgmm@cin.ufpe.br
+                            
+Descricao: Implementações dos algoritmos dfs (profundidade), bfs (largura) e dijkstra (menor caminho) do projeto.
+Licenca: The MIT License (MIT)
+Copyright(c) 2018 Antônio Paulino de Lima Neto
+"""
+
 """ programa """
 """ /programa """
 
