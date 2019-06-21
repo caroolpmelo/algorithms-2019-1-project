@@ -9,7 +9,6 @@ Emails: cmpm@cin.ufpe.br e mgmm@cin.ufpe.br
                             
 Descricao: Implementações dos algoritmos dfs (profundidade), bfs (largura) e dijkstra (menor caminho) do projeto.
 Licenca: The MIT License (MIT)
-Copyright(c) 2018 Antônio Paulino de Lima Neto
 """
 
 """ programa """
@@ -89,6 +88,7 @@ class Grafo:
         self.arestas = [monta_aresta(*aresta) for aresta in arestas]
 
     @property
+
     def vertices(self):
         return set(sum(
             ([aresta.comeco, aresta.end] for aresta in self.arestas), []
@@ -123,6 +123,7 @@ class Grafo:
             self.arestas.append(Aresta(comeco=n02, end=n01, custo=custo))
 
     @property
+
     def vizinhos(self):
         vizinhos = {vertice: set() for vertice in self.vertices}
 
