@@ -3,183 +3,159 @@
 
 """ dfs """
 
-# https://eddmann.com/posts/depth-first-search-and-breadth-first-search-in-python/
+from collections import deque, namedtuple
+def dfs(grafo, comeco, visitado=None):
+    if visitado is None:
+        visitado = set()  # forma uma coleção desordenada de elementos únicos
 
-graph = {
-    'A': set(['B', 'C']),
-    'B': set(['A', 'D', 'E']),
-    'C': set(['A', 'F']),
-    'D': set(['B']),
-    'E': set(['B', 'F']),
-    'F': set(['C', 'E'])
-}
+    visitado.add(comeco)
 
-def dfs(graph, start, visited=None):
-    if visited is None:
-        visited = set() # build an unordored collection of unique elements
-    
-    visited.add(start)
+    for proximo in grafo[comeco] - visitado:
+        dfs(grafo, proximo, visitado)
 
-    for next in graph[start] - visited:
-        dfs(graph, next, visited)
-    
-    return visited
+    return visitado
 
-dfs(graph, 'C') # {'E', 'D', 'F', 'A', 'C', 'B'}
+def dfs_caminhos(grafo, comeco, objetivo, caminho=None):
+    if caminho is None:
+        caminho = [comeco]
 
-def dfs_paths(graph, start, goal, path=None):
-    if path is None:
-        path = [start]
-    
-    if start == goal:
-        yield path
-    
-    for next in graph[start] - set(path):
-        yield from dfs_paths(graph, next, goal, path + [next])
-    
-list(dfs_paths(graph, 'C', 'F')) # [['C', 'F'], ['C', 'A', 'B', 'E', 'F']]
+    if comeco == objetivo:
+        yield caminho  # retorna caminho e continua
+
+    for proximo in grafo[comeco] - set(caminho):
+        yield from dfs_caminhos(grafo, proximo, objetivo, caminho + [proximo])
+
 
 """ /dfs """
 
 """ bfs """
 
-# https://eddmann.com/posts/depth-first-search-and-breadth-first-search-in-python/
+def bfs(grafo, comeco):
+    visitado, fila = set(), [comeco]
+    while fila:
+        vertice = fila.pop(0)
+        if vertice not in visitado:
+            visitado.add(vertice)
+            fila.extend(grafo[vertice] - visitado)
+    return visitado
 
-# Grafo original da professora (aula 2, slide 10):
-# grafo = {
-#     'R': set(['S', 'V']),
-#     'S': set(['R', 'W']),
-#     'T': set(['W', 'X', 'U']),
-#     'U': set(['T', 'X', 'Y']),
-#     'V': set(['R']),
-#     'X': set(['T', 'U', 'Y']),
-#     'Y': set(['U', 'X']),
-#     'W': set(['S', 'T', 'X'])
-#     }
-
-def bfs(graph, start):
-    visited, queue = set(), [start]
-    while queue:
-        vertex = queue.pop(0)
-        if vertex not in visited:
-            visited.add(vertex)
-            queue.extend(graph[vertex] - visited)
-    return visited
-
-bfs(graph, 'A') # {'B', 'C', 'A', 'F', 'D', 'E'}
-
-def bfs_paths(graph, start, goal):
-    queue = [(start, [start])]
-    while queue:
-        (vertex, path) = queue.pop(0)
-        for next in graph[vertex] - set(path):
-            if next == goal:
-                yield path + [next]
+def bfs_caminhos(grafo, comeco, objetivo):
+    fila = [(comeco, [comeco])]
+    while fila:
+        (vertice, caminho) = fila.pop(0)
+        for proximo in grafo[vertice] - set(caminho):
+            if proximo == objetivo:
+                yield caminho + [proximo]
             else:
-                queue.append((next, path + [next]))
+                fila.append((proximo, caminho + [proximo]))
 
-list(bfs_paths(graph, 'A', 'F')) # [['A', 'C', 'F'], ['A', 'B', 'E', 'F']]
 
 """ /bfs """
 
 """ dijkstra """
 
-from collections import deque, namedtuple
-
-
-# we'll use infinity as a default distance to nodes.
+# infinito como distância padrão para os nós
 inf = float('inf')
-Edge = namedtuple('Edge', 'start, end, cost')
+
+Aresta = namedtuple('Aresta', 'comeco, fim, custo')
 
 
-def make_edge(start, end, cost=1):
-  return Edge(start, end, cost)
+def monta_aresta(comeco, fim, custo=1):
+    return Aresta(comeco, fim, custo)
 
 
-class Graph:
-    def __init__(self, edges):
+class Grafo:
+    def __init__(self, arestas):
         # let's check that the data is right
-        wrong_edges = [i for i in edges if len(i) not in [2, 3]]
-        if wrong_edges:
-            raise ValueError('Wrong edges data: {}'.format(wrong_edges))
+        arestas_erradas = [i for i in arestas if len(i) not in [2, 3]]
+        if arestas_erradas:
+            raise ValueError(
+                'Dados de arestas erradas: {}'.format(arestas_erradas))
 
-        self.edges = [make_edge(*edge) for edge in edges]
+        self.arestas = [monta_aresta(*aresta) for aresta in arestas]
 
     @property
     def vertices(self):
-        return set(
-            sum(
-                ([edge.start, edge.end] for edge in self.edges), []
-            )
-        )
+        return set(sum(
+            ([aresta.comeco, aresta.end] for aresta in self.arestas), []
+        ))
 
-    def get_node_pairs(self, n1, n2, both_ends=True):
-        if both_ends:
-            node_pairs = [[n1, n2], [n2, n1]]
+    def pegar_pares_no(self, n01, n02, final_duplo=True):
+        if final_duplo:
+            pares_nos = [[n01, n02], [n02, n01]]
         else:
-            node_pairs = [[n1, n2]]
-        return node_pairs
+            pares_nos = [[n01, n02]]
+        return pares_nos
 
-    def remove_edge(self, n1, n2, both_ends=True):
-        node_pairs = self.get_node_pairs(n1, n2, both_ends)
-        edges = self.edges[:]
-        for edge in edges:
-            if [edge.start, edge.end] in node_pairs:
-                self.edges.remove(edge)
+    def remove_aresta(self, n01, n02, final_duplo=True):
+        pares_nos = self.pegar_pares_no(n01, n02, final_duplo)
 
-    def add_edge(self, n1, n2, cost=1, both_ends=True):
-        node_pairs = self.get_node_pairs(n1, n2, both_ends)
-        for edge in self.edges:
-            if [edge.start, edge.end] in node_pairs:
-                return ValueError('Edge {} {} already exists'.format(n1, n2))
+        arestas = self.arestas[:]
 
-        self.edges.append(Edge(start=n1, end=n2, cost=cost))
-        if both_ends:
-            self.edges.append(Edge(start=n2, end=n1, cost=cost))
+        for aresta in arestas:
+            if [aresta.comeco, aresta.end] in pares_nos:
+                self.arestas.remove(aresta)
+
+    def adiciona_aresta(self, n01, n02, custo=1, final_duplo=True):
+        pares_nos = self.pegar_pares_no(n01, n02, final_duplo)
+
+        for aresta in self.arestas:
+            if [aresta.comeco, aresta.end] in pares_nos:
+                return ValueError('Aresta {} {} já existe'.format(n01, n02))
+
+        self.arestas.append(Aresta(comeco=n01, end=n02, custo=custo))
+
+        if final_duplo:
+            self.arestas.append(Aresta(comeco=n02, end=n01, custo=custo))
 
     @property
-    def neighbours(self):
-        neighbours = {vertex: set() for vertex in self.vertices}
-        for edge in self.edges:
-            neighbours[edge.start].add((edge.end, edge.cost))
+    def vizinhos(self):
+        vizinhos = {vertice: set() for vertice in self.vertices}
 
-        return neighbours
+        for aresta in self.arestas:
+            vizinhos[aresta.comeco].add((aresta.end, aresta.custo))
 
-    def dijkstra(self, source, dest):
-        assert source in self.vertices, 'Such source node doesn\'t exist'
-        distances = {vertex: inf for vertex in self.vertices}
-        previous_vertices = {
-            vertex: None for vertex in self.vertices
+        return vizinhos
+
+    def dijkstra(self, raiz, destino):
+        assert raiz in self.vertices, 'Nó raiz não existe'
+        
+        distancia = {vertice: inf for vertice in self.vertices}
+
+        vertices_anteriores = {
+            vertice: None for vertice in self.vertices
         }
-        distances[source] = 0
+
+        distancia[raiz] = 0
+
         vertices = self.vertices.copy()
 
         while vertices:
-            current_vertex = min(
-                vertices, key=lambda vertex: distances[vertex])
-            vertices.remove(current_vertex)
-            if distances[current_vertex] == inf:
-                break
-            for neighbour, cost in self.neighbours[current_vertex]:
-                alternative_route = distances[current_vertex] + cost
-                if alternative_route < distances[neighbour]:
-                    distances[neighbour] = alternative_route
-                    previous_vertices[neighbour] = current_vertex
+            vertice_atual = min(vertices, chave=lambda vertice: distancia[vertice])
 
-        path, current_vertex = deque(), dest
-        while previous_vertices[current_vertex] is not None:
-            path.appendleft(current_vertex)
-            current_vertex = previous_vertices[current_vertex]
-        if path:
-            path.appendleft(current_vertex)
-        return path
+            vertices.remove(vertice_atual)
 
+            if distancia[vertice_atual] == inf:
+                return
 
-graph = Graph([
-    ("a", "b", 7),  ("a", "c", 9),  ("a", "f", 14), ("b", "c", 10),
-    ("b", "d", 15), ("c", "d", 11), ("c", "f", 2),  ("d", "e", 6),
-    ("e", "f", 9)])
+            for vizinho, custo in self.vizinhos[vertice_atual]:
+                rota_alternativa = distancia[vertice_atual] + custo
 
-print(graph.dijkstra("a", "e"))    
+                if rota_alternativa < distancia[vizinho]:
+                    distancia[vizinho] = rota_alternativa
+
+                    vertices_anteriores[vizinho] = vertice_atual
+
+        caminho, vertice_atual = deque(), destino
+
+        while vertices_anteriores[vertice_atual] is not None:
+            caminho.appendleft(vertice_atual)
+
+            vertice_atual = vertices_anteriores[vertice_atual]
+
+        if caminho:
+            caminho.appendleft(vertice_atual)
+
+        return caminho
 
 """ /dijkstra """
